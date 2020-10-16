@@ -8,6 +8,9 @@
 # install dependencies
 npm install
 
+#更改ant design 样式
+copy /static/antd.css /node_modules/ant-design-vue/dist
+
 # serve with hot reload at localhost:8080
 npm run dev
 
