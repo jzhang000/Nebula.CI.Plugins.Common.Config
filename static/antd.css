@@ -25104,7 +25104,7 @@ tr.ant-table-expanded-row td>.ant-table-wrapper {
 }
 
 .ant-table-small>.ant-table-content>.ant-table-body {
-    margin: 0 8px;
+    margin: 0 0px;
 }
 
 .ant-table-small>.ant-table-content>.ant-table-header>table,

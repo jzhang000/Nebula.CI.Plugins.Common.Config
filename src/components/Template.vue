@@ -82,7 +82,7 @@
       </a-collapse-panel>
     </a-collapse>
     <a-affix :offset-bottom="top">
-      <a-button type="primary" @click="saveData()" id="button"> 保存 </a-button>
+      <a-button @click="saveData()" icon="form" id="button" style="background:rgb(68, 119, 136);color:#ffffff;display: block;margin: 0 auto;"> 保存 </a-button>
     </a-affix>
   </div>
 </template>
