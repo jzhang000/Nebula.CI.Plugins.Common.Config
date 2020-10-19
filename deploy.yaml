@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nebula-ci-plugins-common-config
+  labels:
+    name: nebula-ci-plugins-common-config
+  namespace: nebula
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: nebula-ci-plugins-common-config
+  template:
+    metadata:
+      labels: 
+       name: nebula-ci-plugins-common-config
+    spec:
+      containers:
+      - name: nebula-ci-plugins-common-config
+        image: nebula/ci/plugins/common/config:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nebula-ci-plugins-common-config
+  labels: 
+   name: nebula-ci-plugins-common-config
+  namespace: nebula
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    name: nebula-ci-plugins-common-config
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+    name: nebula-ci-plugins-common-config
+    namespace: nebula
+spec:
+    rules:
+    -  http:
+        paths:
+        - path: /api/ci/plugins/common/config
+          backend:
+            serviceName: nebula-ci-plugins-common-config
+            servicePort: 80
