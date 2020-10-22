@@ -20,6 +20,7 @@
                 style="margin: -5px 0"
                 :value="text"
                 @change="(e) => handleChange(e.target.value, record.key, col)"
+                @blur="saveData"
               />
               <template v-else>
                 <span :title="text">{{ text }}</span>
@@ -43,6 +44,7 @@
               v-model="record.resource"
               style="width: 180px"
               :showArrow="showArrow"
+              @blur="saveData"
             >
               <a-select-option
                 v-for="item in getInputOptions(record.type)"
@@ -69,6 +71,7 @@
               v-model="record.resource"
               style="width: 180px"
               :showArrow="showArrow"
+              @blur="saveData"
             >
               <a-select-option
                 v-for="item in getOutputOptions(record.type)"
@@ -81,15 +84,14 @@
         </a-table>
       </a-collapse-panel>
     </a-collapse>
-    <a-affix :offset-bottom="top">
+    <!-- <a-affix :offset-bottom="top">
       <a-button @click="saveData()" icon="form" id="button" style="background:rgb(68, 119, 136);color:#ffffff;display: block;margin: 0 auto;"> 保存 </a-button>
-    </a-affix>
+    </a-affix>-->
   </div>
 </template>
 <script>
 import axios from "axios";
 
-//const baseUrl = "http://172.18.67.167:32550/";
 const baseUrl = process.env.API_BASE_URL ? process.env.API_BASE_URL : config.baseUrl;
 const pluginPath = process.env.API_PLUGIN_PATH ? process.env.API_PLUGIN_PATH : config.pluginPath
 const resourcePath = process.env.API_RESOURCE_PATH ? process.env.API_RESOURCE_PATH : config.resourcePath
