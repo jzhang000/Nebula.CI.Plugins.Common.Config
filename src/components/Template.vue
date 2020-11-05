@@ -3,9 +3,14 @@
     <a-collapse v-model="activeKey">
       <a-collapse-panel key="1" header="属性信息">
         <a-table
+          v-if="data && data.length"
+          :defaultExpandAllRows="true"
           :columns="columns"
           :data-source="data"
           :customRow="Rowclick"
+          :pagination="false"
+          :expandIconAsCell="false"
+          :expandIconColumnIndex="-1"
           bordered
           size="small"
         >
@@ -14,7 +19,29 @@
             :slot="col"
             slot-scope="text, record"
           >
-            <div :key="col">
+            <div v-if="record.optional.length > 0" :key="col">
+              <a-select
+                v-if="record.editable"
+                :autoClearSearchValue="false"
+                show-search
+                :filter-option="true"
+                v-model="record.param"
+                style="width: 210px"
+                :showArrow="false"
+                @change="selectChange(record)"
+              >
+                <a-select-option
+                  v-for="item in record.optional"
+                  :key="item"
+                  :value="item"
+                  >{{ item }}</a-select-option
+                >
+              </a-select>
+              <template v-else>
+                <span :title="text">{{ text }}</span>
+              </template>
+            </div>
+            <div v-else :key="col">
               <a-input
                 v-if="record.editable"
                 style="margin: -5px 0"
@@ -27,39 +54,68 @@
               </template>
             </div>
           </template>
+          <p
+            v-if="record.description != ''"
+            slot="expandedRowRender"
+            slot-scope="record"
+            style="margin: 0"
+          >
+            描述：{{ record.description }}
+          </p>
         </a-table>
       </a-collapse-panel>
       <a-collapse-panel key="2" header="输入资源信息">
         <a-table
+          v-if="inputResourceData && inputResourceData.length"
           :columns="resourceColumns"
           :data-source="inputResourceData"
+          :pagination="false"
+          :customRow="InputRowclick"
           bordered
           size="small"
         >
           <template slot="name" slot-scope="text">
             <span>{{ text }}</span>
           </template>
-          <template slot="resource" slot-scope="text, record">
-            <a-select
-              v-model="record.resource"
-              style="width: 180px"
-              :showArrow="showArrow"
-              @blur="saveData"
-            >
-              <a-select-option
-                v-for="item in getInputOptions(record.type)"
-                :key="item.name"
-                :value="item.name"
-                >{{ item.annoName }}</a-select-option
+          <template
+            v-for="col in ['resource']"
+            :slot="col"
+            slot-scope="text, record"
+          >
+            <div :key="col">
+              <a-select
+                v-if="record.editable"
+                :autoClearSearchValue="false"
+                show-search
+                :filter-option="true"
+                v-model="record.resource"
+                style="width: 210px"
+                :showArrow="false"
+                @change="selectChange(record)"
               >
-            </a-select>
+                <a-select-option
+                  v-for="item in getResourceOptions(record.type)"
+                  :key="item.name"
+                  :value="item.name"
+                  >{{ item.annoName }}</a-select-option
+                >
+              </a-select>
+              <template v-else>
+                <span :title="getResourceName(record.type, record.resource)">{{
+                  getResourceName(record.type, record.resource)
+                }}</span>
+              </template>
+            </div>
           </template>
         </a-table>
       </a-collapse-panel>
       <a-collapse-panel key="3" header="输出资源信息">
         <a-table
+          v-if="outputResourceData && outputResourceData.length"
           :columns="resourceColumns"
           :data-source="outputResourceData"
+          :pagination="false"
+          :customRow="OutputRowclick"
           bordered
           size="small"
         >
@@ -69,12 +125,12 @@
           <template slot="resource" slot-scope="text, record">
             <a-select
               v-model="record.resource"
-              style="width: 180px"
-              :showArrow="showArrow"
-              @blur="saveData"
+              style="width: 220px"
+              :showArrow="false"
+              @change="selectChange(record)"
             >
               <a-select-option
-                v-for="item in getOutputOptions(record.type)"
+                v-for="item in getResourceOptions(record.type)"
                 :key="item.name"
                 :value="item.name"
                 >{{ item.annoName }}</a-select-option
@@ -84,23 +140,20 @@
         </a-table>
       </a-collapse-panel>
     </a-collapse>
-    <!-- <a-affix :offset-bottom="top">
-      <a-button @click="saveData()" icon="form" id="button" style="background:rgb(68, 119, 136);color:#ffffff;display: block;margin: 0 auto;"> 保存 </a-button>
-    </a-affix>-->
   </div>
 </template>
 <script>
 import axios from "axios";
 
 const baseUrl = process.env.API_BASE_URL ? process.env.API_BASE_URL : config.baseUrl;
-const pluginPath = process.env.API_PLUGIN_PATH ? process.env.API_PLUGIN_PATH : config.pluginPath
-const resourcePath = process.env.API_RESOURCE_PATH ? process.env.API_RESOURCE_PATH : config.resourcePath
+const pluginPath = process.env.API_PLUGIN_PATH ? process.env.API_PLUGIN_PATH : config.pluginPath;
+const resourcePath = process.env.API_RESOURCE_PATH ? process.env.API_RESOURCE_PATH : config.resourcePath;
 
 const columns = [
   {
     title: "属性名称",
-    dataIndex: "description",
-    width: "100px",
+    dataIndex: "annoName",
+    width: "120px",
     scopedSlots: { customRender: "name" },
   },
   {
@@ -116,7 +169,7 @@ const resourceColumns = [
   {
     title: "资源名称",
     dataIndex: "description",
-    width: "100px",
+    width: "120px",
     scopedSlots: { customRender: "name" },
   },
   {
@@ -135,25 +188,27 @@ const outputResourceData = [];
 export default {
   data() {
     this.cacheData = data.map((item) => ({ ...item }));
+    this.inputcacheData = inputResourceData.map((item) => ({ ...item }));
+    this.outputcacheData = outputResourceData.map((item) => ({ ...item }));
     return {
       data,
       columns,
       inputResourceData,
       outputResourceData,
       resourceColumns,
-      editingKey: "",
       activeKey: ["1", "2", "3"],
       top: 0,
       resourceList: [],
       baseUrl,
       pluginPath,
       resourcePath,
-      showArrow: false,
     };
   },
   mounted() {
-    this.getResources();
+    let that = this;
 
+    this.getResources();
+    
     window.addEventListener("message", (event) => {
       var data = event.data;
       if (data.cmd == "clickNode") {
@@ -168,20 +223,19 @@ export default {
           inputData = property.resources.inputs;
           outputData = property.resources.outputs;
         }
-        let that = this;
         axios
           .get(that.baseUrl + this.pluginPath + type)
           .then(function (res) {
             that.data = [];
             for (let i = 0; i < res.data.params.length; i++) {
-              let nodePropertyParam = paramData.find(
-                (a) => a.name == res.data.params[i].name
-              );
+              let nodePropertyParam = paramData.find((a) => a.name == res.data.params[i].name);
               that.data.push({
                 key: i.toString(),
                 name: res.data.params[i].name,
+                annoName: res.data.params[i].annoName,
                 description: res.data.params[i].description,
-                param: nodePropertyParam ? nodePropertyParam.value : "",
+                param: res.data.params[i].default,
+                optional: res.data.params[i].optional,
               });
             }
 
@@ -216,6 +270,8 @@ export default {
             }
 
             that.cacheData = that.data.map((item) => ({ ...item }));
+            that.inputcacheData = that.inputResourceData.map((item) => ({...item,}));
+            that.outputcacheData = that.outputResourceData.map((item) => ({...item,}));
           })
           .catch(function (error) {
             console.log(error);
@@ -224,15 +280,75 @@ export default {
     });
   },
   methods: {
-    getInputOptions(type) {
+    getDefaultParam(optional){
+      if(optional.length > 0) {
+        return optional[0]
+      } else {
+        return ""
+      }
+    },
+    getFirstOption(type){
+      let targetResource = this.resourceList.filter((e) => e.name == type);
+      let resources = targetResource[0].resources;
+      if(resources.length > 0){
+        return resources[0].name
+      } else {
+        return "";
+      }
+    },
+    selectChange(record) {
+      this.saveData();
+
+      const newData = [...this.data];
+      const newCacheData = [...this.cacheData];
+      const target = newData.filter((item) => record.name === item.name)[0];
+      const targetCache = newCacheData.filter((item) => record.name === item.name)[0];
+
+      if (target && targetCache) {
+        delete target.editable;
+        this.data = newData;
+        Object.assign(targetCache, target);
+        this.cacheData = newCacheData;
+      }
+
+      const newInputData = [...this.inputResourceData];
+      const newInputCacheData = [...this.inputcacheData];
+      const targetInput = newInputData.filter((item) => record.name === item.name)[0];
+      const targetInputCache = newInputCacheData.filter((item) => record.name === item.name)[0];
+
+      if (targetInput && targetInputCache) {
+        delete targetInput.editable;
+        this.inputResourceData = newInputData;
+        Object.assign(targetInputCache, targetInput);
+        this.inputcacheData = newInputCacheData;
+      }
+
+      const newOuputData = [...this.outputResourceData];
+      const newOutputCacheData = [...this.outputcacheData];
+      const targetOutput = newInputData.filter((item) => record.name === item.name)[0];
+      const targetOutputCache = newInputCacheData.filter((item) => record.name === item.name)[0];
+
+      if (targetOutput && targetOutputCache) {
+        delete targetOutput.editable;
+        this.outputResourceData = newOuputData;
+        Object.assign(targetOutputCache, targetOutput);
+        this.outputcacheData = newOutputCacheData;
+      }
+    },
+    getResourceOptions(type) {
       let targetResource = this.resourceList.filter((e) => e.name == type);
       let resources = targetResource[0].resources;
       return resources;
     },
-    getOutputOptions(type) {
+    getResourceName(type, name) {
       let targetResource = this.resourceList.filter((e) => e.name == type);
       let resources = targetResource[0].resources;
-      return resources;
+      let resource = resources.filter((e) => e.name == name);
+      let annoName = ""
+      if(resource.length > 0){
+        annoName = resource[0].annoName;
+      }
+      return annoName;
     },
     getResources() {
       let that = this;
@@ -261,7 +377,6 @@ export default {
           mouseenter: (event) => {
             const newData = [...this.data];
             const target = newData.filter((item) => record.key === item.key)[0];
-            this.editingKey = record.key;
             if (target) {
               target.editable = true;
               this.data = newData;
@@ -274,14 +389,47 @@ export default {
             const targetCache = newCacheData.filter(
               (item) => record.key === item.key
             )[0];
-            if (target && targetCache) {
+            if (target && targetCache && target.optional.length == 0) {
               delete target.editable;
               this.data = newData;
               Object.assign(targetCache, target);
               this.cacheData = newCacheData;
             }
-            this.editingKey = "";
           },
+        },
+      };
+    },
+    InputRowclick(record, index) {
+      return {
+        on: {
+          click: () => {}, //表格行 点击事件
+          dblclick: () => {}, //表格行 双击事件
+          mouseenter: (event) => {
+            const newData = [...this.inputResourceData];
+            const target = newData.filter((item) => record.key === item.key)[0];
+            if (target) {
+              target.editable = true;
+              this.inputResourceData = newData;
+            }
+          },
+          mouseleave: (event) => {},
+        },
+      };
+    },
+    OutputRowclick(record, index){
+      return {
+        on: {
+          click: () => {}, //表格行 点击事件
+          dblclick: () => {}, //表格行 双击事件
+          mouseenter: (event) => {
+            const newData = [...this.outputResourceData];
+            const target = newData.filter((item) => record.key === item.key)[0];
+            if (target) {
+              target.editable = true;
+              this.outputResourceData = newData;
+            }
+          },
+          mouseleave: (event) => {},
         },
       };
     },
