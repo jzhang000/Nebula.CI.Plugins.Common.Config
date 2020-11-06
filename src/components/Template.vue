@@ -233,7 +233,7 @@ export default {
                 name: res.data.params[i].name,
                 annoName: res.data.params[i].annoName,
                 description: res.data.params[i].description,
-                param: nodePropertyParam ? nodePropertyParam : (res.data.params[i].optional.length > 0 ? that.getDefaultParam(res.data.params[i].optional) : res.data.params[i].default) ,
+                param: nodePropertyParamS ? nodePropertyParam.value : (res.data.params[i].optional.length > 0 ? that.getDefaultParam(res.data.params[i].optional) : res.data.params[i].default) ,
                 optional: res.data.params[i].optional,
               });
             }
