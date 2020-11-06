@@ -207,8 +207,7 @@ export default {
   mounted() {
     let that = this;
 
-    this.getResources();
-    
+    that.getResources();
     window.addEventListener("message", (event) => {
       var data = event.data;
       if (data.cmd == "clickNode") {
@@ -224,7 +223,7 @@ export default {
           outputData = property.resources.outputs;
         }
         axios
-          .get(that.baseUrl + this.pluginPath + type)
+          .get(that.baseUrl + that.pluginPath + type)
           .then(function (res) {
             that.data = [];
             for (let i = 0; i < res.data.params.length; i++) {
@@ -234,21 +233,19 @@ export default {
                 name: res.data.params[i].name,
                 annoName: res.data.params[i].annoName,
                 description: res.data.params[i].description,
-                param: res.data.params[i].default,
+                param: nodePropertyParam ? nodePropertyParam : (res.data.params[i].optional.length > 0 ? that.getDefaultParam(res.data.params[i].optional) : res.data.params[i].default) ,
                 optional: res.data.params[i].optional,
               });
             }
 
             that.inputResourceData = [];
             for (let i = 0; i < res.data.resources.inputs.length; i++) {
-              let nodePropertyInput = inputData.find(
-                (a) => a.name == res.data.resources.inputs[i].name
-              );
+              let nodePropertyInput = inputData.find((a) => a.name == res.data.resources.inputs[i].name);
               that.inputResourceData.push({
                 key: i.toString(),
                 name: res.data.resources.inputs[i].name,
                 description: res.data.resources.inputs[i].description,
-                resource: nodePropertyInput ? nodePropertyInput.resource : "",
+                resource: nodePropertyInput ? nodePropertyInput.resource : that.getFirstOption(res.data.resources.inputs[i].type),
                 optional: res.data.resources.inputs[i].optional,
                 type: res.data.resources.inputs[i].type,
               });
@@ -256,14 +253,12 @@ export default {
 
             that.outputResourceData = [];
             for (let i = 0; i < res.data.resources.outputs.length; i++) {
-              let nodePropertyOutput = outputData.find(
-                (a) => a.name == res.data.resources.outputs[i].name
-              );
+              let nodePropertyOutput = outputData.find((a) => a.name == res.data.resources.outputs[i].name);
               that.outputResourceData.push({
                 key: i.toString(),
                 name: res.data.resources.outputs[i].name,
                 description: res.data.resources.outputs[i].description,
-                resource: nodePropertyOutput ? nodePropertyOutput.resource : "",
+                resource: nodePropertyOutput ? nodePropertyOutput.resource : that.getFirstOption(res.data.resources.inputs[i].type),
                 optional: res.data.resources.outputs[i].optional,
                 type: res.data.resources.outputs[i].type,
               });
@@ -278,6 +273,55 @@ export default {
           });
       }
     });
+    
+    /*
+       axios
+          .get("http://172.18.67.133:5000/api/app/plugin/cppcheck")
+          .then(function (res) {
+            that.data = [];
+            for (let i = 0; i < res.data.params.length; i++) {
+              that.data.push({
+                key: i.toString(),
+                name: res.data.params[i].name,
+                annoName: res.data.params[i].annoName,
+                description: res.data.params[i].description,
+                param: res.data.params[i].optional.length > 0 ? that.getDefaultParam(res.data.params[i].optional) : res.data.params[i].default ,
+                optional: res.data.params[i].optional,
+              });
+            }
+
+            that.inputResourceData = [];
+            for (let i = 0; i < res.data.resources.inputs.length; i++) {
+              that.inputResourceData.push({
+                key: i.toString(),
+                name: res.data.resources.inputs[i].name,
+                description: res.data.resources.inputs[i].description,
+                resource: that.getFirstOption(res.data.resources.inputs[i].type),
+                optional: res.data.resources.inputs[i].optional,
+                type: res.data.resources.inputs[i].type,
+              });
+            }
+
+            that.outputResourceData = [];
+            for (let i = 0; i < res.data.resources.outputs.length; i++) {
+              that.outputResourceData.push({
+                key: i.toString(),
+                name: res.data.resources.outputs[i].name,
+                description: res.data.resources.outputs[i].description,
+                resource: that.getFirstOption(res.data.resources.inputs[i].type),
+                optional: res.data.resources.outputs[i].optional,
+                type: res.data.resources.outputs[i].type,
+              });
+            }
+
+            that.cacheData = that.data.map((item) => ({ ...item }));
+            that.inputcacheData = that.inputResourceData.map((item) => ({...item,}));
+            that.outputcacheData = that.outputResourceData.map((item) => ({...item,}));
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+          */
   },
   methods: {
     getDefaultParam(optional){
