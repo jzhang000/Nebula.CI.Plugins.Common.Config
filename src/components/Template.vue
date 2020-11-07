@@ -14,6 +14,9 @@
           bordered
           size="small"
         >
+          <template slot="name" slot-scope="text">
+            <span style="font-weight: 600">{{ text }}</span>
+          </template>
           <template
             v-for="col in ['param']"
             :slot="col"
@@ -58,7 +61,7 @@
             v-if="record.description != ''"
             slot="expandedRowRender"
             slot-scope="record"
-            style="margin: 0"
+            style="margin: 0;font-size:13px; color: #0b6aa2"
           >
             描述：{{ record.description }}
           </p>
@@ -75,7 +78,7 @@
           size="small"
         >
           <template slot="name" slot-scope="text">
-            <span>{{ text }}</span>
+            <span style="font-weight: 600">{{ text }}</span>
           </template>
           <template
             v-for="col in ['resource']"
@@ -120,7 +123,7 @@
           size="small"
         >
           <template slot="name" slot-scope="text">
-            <span>{{ text }}</span>
+            <span style="font-weight: 600">{{ text }}</span>
           </template>
           <template slot="resource" slot-scope="text, record">
             <a-select
@@ -208,6 +211,7 @@ export default {
     let that = this;
 
     that.getResources();
+    
     window.addEventListener("message", (event) => {
       var data = event.data;
       if (data.cmd == "clickNode") {
@@ -273,10 +277,10 @@ export default {
           });
       }
     });
-    
-    /*
+
+      /*
        axios
-          .get("http://172.18.67.133:5000/api/app/plugin/cppcheck")
+          .get("http://172.18.67.133:5000/api/app/plugin/bugdigger")
           .then(function (res) {
             that.data = [];
             for (let i = 0; i < res.data.params.length; i++) {
