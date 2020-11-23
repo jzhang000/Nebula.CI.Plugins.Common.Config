@@ -67,7 +67,7 @@
           </p>
         </a-table>
       </a-collapse-panel>
-      <a-collapse-panel key="2" header="输入资源信息">
+      <a-collapse-panel key="2" header="输入资源信息" v-if="inputResourceData && inputResourceData.length">
         <a-table
           v-if="inputResourceData && inputResourceData.length"
           :columns="resourceColumns"
@@ -112,7 +112,7 @@
           </template>
         </a-table>
       </a-collapse-panel>
-      <a-collapse-panel key="3" header="输出资源信息">
+      <a-collapse-panel key="3" header="输出资源信息" v-if="outputResourceData && outputResourceData.length">
         <a-table
           v-if="outputResourceData && outputResourceData.length"
           :columns="resourceColumns"
