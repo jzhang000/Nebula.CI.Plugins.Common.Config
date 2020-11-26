@@ -215,6 +215,10 @@ export default {
     window.addEventListener("message", (event) => {
       var messageData = event.data;
       if (messageData.cmd == "clickNode") {
+        that.data = [];
+        that.inputResourceData = [];
+        that.outputResourceData = [];
+
         var type = messageData.params.type;
         var property = messageData.params.property;
 
@@ -227,7 +231,6 @@ export default {
           outputData = property.resources.outputs;
         }
 
-        that.data = [];
         axios
           .get(that.baseUrl + that.pluginPath + type)
           .then(function (res) {
@@ -243,7 +246,6 @@ export default {
               });
             }
 
-            that.inputResourceData = [];
             for (let i = 0; i < res.data.resources.inputs.length; i++) {
               let nodePropertyInput = inputData.find((a) => a.name == res.data.resources.inputs[i].name);
               that.inputResourceData.push({
@@ -256,7 +258,6 @@ export default {
               });
             }
 
-            that.outputResourceData = [];
             for (let i = 0; i < res.data.resources.outputs.length; i++) {
               let nodePropertyOutput = outputData.find((a) => a.name == res.data.resources.outputs[i].name);
               that.outputResourceData.push({
